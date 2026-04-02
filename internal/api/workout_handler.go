@@ -1,10 +1,12 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 
+	"github.com/cakrasera/femProject/internal/store"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -51,5 +53,5 @@ func (wh *WorkoutHandler) HandleCreateWorkout(w http.ResponseWriter, r *http.Req
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewDecoder(w).Encoderode(createdWorkout)
+	json.NewEncoder(w).Encode(createdWorkout)
 }
