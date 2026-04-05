@@ -139,6 +139,7 @@ func (pg *PostgresWorkoutStore) UpdatedWorkout(workout *Workout) error {
 		return err
 	}
 
+	// For checking actual updated rows
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		return err
