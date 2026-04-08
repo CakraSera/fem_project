@@ -1,6 +1,9 @@
 package store
 
-import "database/sql"
+import (
+	"database/sql"
+	"fmt"
+)
 
 type Workout struct {
 	ID    int    `json:"id"`
@@ -14,7 +17,7 @@ type Workout struct {
 
 type WorkoutEntry struct {
 	ID              int      `json:"id"`
-	exerciseName    string   `json:"exercise_name"`
+	ExerciseName    string   `json:"exercise_name"`
 	Sets            int      `json:"sets"`
 	Reps            *int     `json:"reps"`
 	DurationSeconds *int     `json:"duration_minutes"`
@@ -62,7 +65,7 @@ func (pg *PostgresWorkoutStore) CreateWorkout(workout *Workout) (*Workout, error
 						RETURNING id
 		`
 
-		err = tx.QueryRow(query, workout.ID, entry.exerciseName, entry.Sets, entry.Reps, entry.DurationSeconds, entry.Weight, entry.Notes, entry.OrderIndex).Scan(&entry.ID)
+		err = tx.QueryRow(query, workout.ID, entry.ExerciseName, entry.Sets, entry.Reps, entry.DurationSeconds, entry.Weight, entry.Notes, entry.OrderIndex).Scan(&entry.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -83,6 +86,7 @@ func (pg *PostgresWorkoutStore) GetWorkoutByID(id int64) (*Workout, error) {
 					WHERE id = $1
 	`
 
+	fmt.Println("1")
 	err := pg.db.QueryRow(query, id).Scan(&workout.ID, &workout.Title, &workout.Description, &workout.DurationMinutes, &workout.CaloriesBurned)
 	if err != nil {
 		return nil, err
@@ -93,16 +97,18 @@ func (pg *PostgresWorkoutStore) GetWorkoutByID(id int64) (*Workout, error) {
 	}
 
 	entryQuery := `
-					SELECT id, exercise_name, sets, reps, duration_seconds, weight, notes, order_index 
-					FROM workout_entries 
-					WHERE workout_id = $1
-					ORDER BY order_index
-	`
+  SELECT id, exercise_name, sets, reps, duration_seconds, weight, notes, order_index
+  FROM workout_entries
+  WHERE workout_id = $1
+  ORDER BY order_index
+  `
 
+	fmt.Printf("query %+v", entryQuery)
 	rows, err := pg.db.Query(entryQuery, id)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("checking: %+v", rows)
 
 	for rows.Next() {
 		var entry WorkoutEntry
@@ -119,17 +125,19 @@ func (pg *PostgresWorkoutStore) GetWorkoutByID(id int64) (*Workout, error) {
 		}
 		workout.Entries = append(workout.Entries, entry)
 	}
+
+	fmt.Println('3')
 	return workout, nil
 }
 
-func (pg *PostgresWorkoutStore) UpdatedWorkout(workout *Workout) error {
+func (pg *PostgresWorkoutStore) UpdateWorkout(workout *Workout) error {
 	tx, err := pg.db.Begin()
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 
-	updateQuery := `
+	query := `
 					UPDATE workouts 
 					SET title = $1, description = $2, duration_minutes = $3, calories_burned = $4 
 					WHERE id = $5
