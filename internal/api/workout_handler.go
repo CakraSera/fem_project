@@ -67,7 +67,7 @@ func (wh *WorkoutHandler) HandleCreateWorkout(w http.ResponseWriter, r *http.Req
 	json.NewEncoder(w).Encode(createdWorkout)
 }
 
-func (wh *WorkoutHandler) HandledupdateWorkoutByID(w http.ResponseWriter, r *http.Request) {
+func (wh *WorkoutHandler) HandleUpdateWorkoutByID(w http.ResponseWriter, r *http.Request) {
 	paramsWorkoutID := chi.URLParam(r, "id")
 	if paramsWorkoutID == "" {
 		http.NotFound(w, r)
@@ -119,7 +119,7 @@ func (wh *WorkoutHandler) HandledupdateWorkoutByID(w http.ResponseWriter, r *htt
 		existingWorkout.CaloriesBurned = *updateWorkoutRequest.CaloriesBurned
 	}
 	if updateWorkoutRequest.Entries != nil {
-		existingWorkout.Entries = *updateWorkoutRequest.Entries
+		existingWorkout.Entries = updateWorkoutRequest.Entries
 	}
 
 	err = wh.workoutStore.UpdateWorkout(existingWorkout)
@@ -131,5 +131,5 @@ func (wh *WorkoutHandler) HandledupdateWorkoutByID(w http.ResponseWriter, r *htt
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(existingWorkout)
+	return
 }
