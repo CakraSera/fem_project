@@ -40,7 +40,7 @@ func (wh *WorkoutHandler) HandleGetWorkoutByID(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	w.Header().Set("Content-Type..", "application/json")
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(workout)
 
@@ -69,6 +69,7 @@ func (wh *WorkoutHandler) HandleCreateWorkout(w http.ResponseWriter, r *http.Req
 
 func (wh *WorkoutHandler) HandleUpdateWorkoutByID(w http.ResponseWriter, r *http.Request) {
 	paramsWorkoutID := chi.URLParam(r, "id")
+
 	if paramsWorkoutID == "" {
 		http.NotFound(w, r)
 		return
@@ -95,7 +96,7 @@ func (wh *WorkoutHandler) HandleUpdateWorkoutByID(w http.ResponseWriter, r *http
 	var updateWorkoutRequest struct {
 		Title           *string              `json:"title"`
 		Description     *string              `json:"description"`
-		DurationMinutes *int                 `json:"duratin_minutes"`
+		DurationMinutes *int                 `json:"duration_minutes"`
 		CaloriesBurned  *int                 `json:"calories_burned"`
 		Entries         []store.WorkoutEntry `json:"entries"`
 	}
@@ -131,5 +132,33 @@ func (wh *WorkoutHandler) HandleUpdateWorkoutByID(w http.ResponseWriter, r *http
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	return
+	json.NewEncoder(w).Encode(existingWorkout)
+}
+
+func (wh *WorkoutHandler) HandleDeleteWorkoutByID(res http.ResponseWriter, req *http.Request) {
+	paramsWorkoutID := chi.URLParam(req, "id")
+	if paramsWorkoutID == "" {
+		http.NotFound(res, req)
+	}
+
+	workoutID, err := strconv.ParseInt(paramsWorkoutID, 10, 64)
+	if err != nil {
+		http.NotFound(res, req)
+		return
+	}
+
+	existingWorkout, err := wh.workoutStore.GetWorkoutByID(workoutID)
+	if err != nil {
+		http.Error(res, "failed to fetch the workout", http.StatusInternalServerError)
+		return
+	}
+
+	err = wh.workoutStore.DeleteWorkout(workoutID)
+	if err != nil {
+		http.Error(res, "failed delete workout", http.StatusInternalServerError)
+		return
+	}
+
+	res.WriteHeader(http.StatusOK)
+	json.NewEncoder(res).Encode(existingWorkout)
 }

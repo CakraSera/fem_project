@@ -2,7 +2,6 @@ package store
 
 import (
 	"database/sql"
-	"fmt"
 )
 
 type Workout struct {
@@ -39,6 +38,7 @@ type WorkoutStore interface {
 	CreateWorkout(*Workout) (*Workout, error)
 	GetWorkoutByID(id int64) (*Workout, error)
 	UpdateWorkout(*Workout) error
+	DeleteWorkout(id int64) error
 }
 
 func (pg *PostgresWorkoutStore) CreateWorkout(workout *Workout) (*Workout, error) {
@@ -86,7 +86,6 @@ func (pg *PostgresWorkoutStore) GetWorkoutByID(id int64) (*Workout, error) {
 					WHERE id = $1
 	`
 
-	fmt.Println("1")
 	err := pg.db.QueryRow(query, id).Scan(&workout.ID, &workout.Title, &workout.Description, &workout.DurationMinutes, &workout.CaloriesBurned)
 	if err != nil {
 		return nil, err
@@ -103,12 +102,10 @@ func (pg *PostgresWorkoutStore) GetWorkoutByID(id int64) (*Workout, error) {
   ORDER BY order_index
   `
 
-	fmt.Printf("query %+v", entryQuery)
 	rows, err := pg.db.Query(entryQuery, id)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("checking: %+v", rows)
 
 	for rows.Next() {
 		var entry WorkoutEntry
@@ -119,6 +116,8 @@ func (pg *PostgresWorkoutStore) GetWorkoutByID(id int64) (*Workout, error) {
 			&entry.Reps,
 			&entry.DurationSeconds,
 			&entry.Weight,
+			&entry.Notes,
+			&entry.OrderIndex,
 		)
 		if err != nil {
 			return nil, err
@@ -126,7 +125,6 @@ func (pg *PostgresWorkoutStore) GetWorkoutByID(id int64) (*Workout, error) {
 		workout.Entries = append(workout.Entries, entry)
 	}
 
-	fmt.Println('3')
 	return workout, nil
 }
 
@@ -182,4 +180,17 @@ func (pg *PostgresWorkoutStore) UpdateWorkout(workout *Workout) error {
 		}
 	}
 	return tx.Commit()
+}
+
+func (pg *PostgresWorkoutStore) DeleteWorkout(id int64) error {
+	query := `
+					DELETE FROM workouts
+					WHERE id = $1
+	`
+	_, err := pg.db.Exec(query, id)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
