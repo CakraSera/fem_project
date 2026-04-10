@@ -139,6 +139,7 @@ func (wh *WorkoutHandler) HandleDeleteWorkoutByID(res http.ResponseWriter, req *
 	paramsWorkoutID := chi.URLParam(req, "id")
 	if paramsWorkoutID == "" {
 		http.NotFound(res, req)
+		return
 	}
 
 	workoutID, err := strconv.ParseInt(paramsWorkoutID, 10, 64)
